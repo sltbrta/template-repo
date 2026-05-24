@@ -27,6 +27,6 @@ repos:
 
   # TS/JS lint + format. Uncomment when package.json dev deps include Biome.
   # - repo: https://github.com/biomejs/pre-commit
-  #   rev: v2.4.13
+  #   rev: v2.4.15
   #   hooks:
   #     - id: biome-check

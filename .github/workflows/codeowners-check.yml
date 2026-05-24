@@ -15,15 +15,19 @@ jobs:
   validate-codeowners:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate CODEOWNERS
+      - name: Validate CODEOWNERS (PR branch)
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_REF: ${{ github.head_ref }}
         run: |
           set -euo pipefail
-          errors=$(gh api "repos/${{ github.repository }}/codeowners/errors" --jq '.errors')
+          # Pass the PR's head ref so we validate the PR's CODEOWNERS, not main's.
+          # Without -f ref=<branch>, the API resolves against the default branch.
+          errors=$(gh api "repos/${GITHUB_REPOSITORY}/codeowners/errors" \
+            -f "ref=${PR_REF}" --jq '.errors')
           if [ "$errors" != "[]" ]; then
-            echo "::error::CODEOWNERS validation failed"
+            echo "::error::CODEOWNERS validation failed on PR branch ${PR_REF}"
             echo "$errors"
             exit 1
           fi
-          echo "CODEOWNERS valid."
+          echo "CODEOWNERS valid on PR branch ${PR_REF}."
