@@ -32,20 +32,34 @@ if [ -d "$HOOKS_DIR" ]; then
 fi
 
 if [ -n "$LOCAL_OVERRIDES" ]; then
-  echo "ERROR: local .git/hooks/ has non-sample files. These OVERRIDE global core.hooksPath,"
-  echo "so setting core.hooksPath below would be inert. Per ~/.claude/rules/known-hooks.md"
-  echo "'Worktree-specific hooks' — local repo hooks fully shadow the global path."
-  echo ""
-  echo "Conflicting hook files:"
+  # Per git-config(1): when core.hooksPath is set, Git does NOT execute hooks
+  # from .git/hooks — only from the configured hooksPath. So these files are
+  # INERT once we set core.hooksPath below. The warning still matters because
+  # tools like husky / simple-git-hooks not only DROP files in .git/hooks but
+  # ALSO call `git config --local core.hooksPath .husky` (etc), which DOES
+  # override the global path. We re-check core.hooksPath explicitly below.
+  echo "WARN: local .git/hooks/ contains non-sample files (will be inert once"
+  echo "      core.hooksPath is set, but their presence may indicate a tool"
+  echo "      like husky has also reconfigured the hookspath — verify below):"
   while IFS= read -r hook; do
     [ -n "$hook" ] && printf '  %s\n' "$hook"
   done <<<"$LOCAL_OVERRIDES"
   echo ""
-  echo "Fix: delete the conflicting files (or move them aside), then re-run this script."
-  exit 1
 fi
 
 CURRENT=$(git config --local core.hooksPath 2>/dev/null || echo "")
+if [ -n "$CURRENT" ] && [ "$CURRENT" != "$HOOK_PATH" ]; then
+  echo "ERROR: local core.hooksPath is already set to a DIFFERENT path:"
+  echo "  current:  $CURRENT"
+  echo "  desired:  $HOOK_PATH"
+  echo ""
+  echo "This is likely set by husky / simple-git-hooks / similar tool."
+  echo "Decide whether to keep the existing config or override:"
+  echo "  - To override: git config --local --unset core.hooksPath ; ./scripts/setup-hooks.sh"
+  echo "  - To keep current: do nothing (this script is a no-op for you)"
+  exit 1
+fi
+
 if [ "$CURRENT" = "$HOOK_PATH" ]; then
   echo "core.hooksPath already set to $HOOK_PATH"
 else
@@ -53,11 +67,12 @@ else
   echo "set local core.hooksPath = $HOOK_PATH"
 fi
 
-if [ -x "$HOOK_PATH/pre-push" ]; then
-  echo "pre-push hook present at $HOOK_PATH/pre-push"
-else
-  echo "WARN: $HOOK_PATH/pre-push missing or not executable"
+if [ ! -x "$HOOK_PATH/pre-push" ]; then
+  echo "ERROR: $HOOK_PATH/pre-push missing or not executable."
+  echo "       Hooks NOT active. Install dotclaude correctly first."
+  exit 1
 fi
 
+echo "pre-push hook present at $HOOK_PATH/pre-push"
 echo ""
 echo "Done. Hooks active. Test by attempting a no-op push: git push --dry-run"

@@ -1,7 +1,8 @@
-# Full Python quality toolchain — per ~/.claude/rules/quality-toolchain-pre-merge.md
+# Full Python quality toolchain - per ~/.claude/rules/quality-toolchain-pre-merge.md
 # Ruff (lint+format) + mypy (types) + bandit (security SAST) + pip-audit (deps).
 # NOTE: superseded by quality.yml for projects using uv. This workflow exists for
-# projects that prefer pip-based installs over uv. Either-or; not both.
+# projects that prefer pip-based installs over uv. Either-or; not both — the
+# job-level guard below ensures lint.yml only runs when uv.lock is absent.
 name: lint
 
 on:
@@ -15,6 +16,9 @@ permissions:
 
 jobs:
   quality-stack:
+    # Skip when uv.lock is present (uv-managed project — quality.yml takes over).
+    # Pip-only projects (no uv.lock) keep this workflow as their gate.
+    if: ${{ hashFiles('uv.lock') == '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,13 +28,13 @@ jobs:
         with:
           python-version-file: ".python-version"
 
-      - name: Install quality stack
+      - name: Install quality stack (exact pins per hermetic-builds.md)
         run: |
           pip install --quiet \
-            "ruff>=0.5" \
-            "mypy>=1.10" \
-            "bandit[toml]>=1.7" \
-            "pip-audit>=2.7"
+            "ruff==0.8.0" \
+            "mypy==1.13.0" \
+            "bandit[toml]==1.7.10" \
+            "pip-audit==2.7.3"
 
       - name: Ruff lint
         run: ruff check .
