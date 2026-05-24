@@ -17,12 +17,13 @@ package = false
 [dependency-groups]
 # Exact pins (==) for hermetic reproducibility per ~/.claude/rules/hermetic-builds.md.
 # Mirrors package.json devDependencies style. Bump deliberately via PR + uv lock.
+# Versions verified current on PyPI as of 2026-05-25.
 dev = [
-  "bandit[toml]==1.7.10",
-  "mypy==1.13.0",
-  "pip-audit==2.7.3",
-  "pytest==8.3.0",
-  "ruff==0.8.0",
+  "bandit[toml]==1.9.4",
+  "mypy==2.1.0",
+  "pip-audit==2.10.0",
+  "pytest==9.0.3",
+  "ruff==0.15.14",
 ]
 
 # Ruff is the canonical Python linter + formatter.

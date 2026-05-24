@@ -11,7 +11,7 @@ Split honestly: rules with mechanical enforcement (CI / hooks / scripts that fai
 | Rule | File(s) | Enforcement layer |
 |---|---|---|
 | `code-modularity-standards.md` (≤500 LOC) | `.github/workflows/file-size-gate.yml`, `scripts/check-file-size.sh`, `.file-size-allow-list` | CI gate fails on offender |
-| `quality-toolchain-pre-merge.md` (lint + type + sec) | `pyproject.toml`, `biome.json`, `.pre-commit-config.yaml`, `.github/workflows/quality.yml`, `.github/workflows/lint.yml` | Pre-commit (Layer 1) + CI gate (Layer 3) |
+| `quality-toolchain-pre-merge.md` (lint + type + sec) | `pyproject.toml`, `biome.json`, `.pre-commit-config.yaml`, `.github/workflows/quality.yml` | Pre-commit (Layer 1) + CI gate (Layer 3) |
 | `code-ownership.md` (CODEOWNERS) | `CODEOWNERS`, `.github/workflows/codeowners-check.yml` | Required reviews + PR-branch CODEOWNERS validation |
 | `hermetic-builds.md` (pinned toolchain) | `.nvmrc`, `.python-version`, lockfile-required CI (no `--frozen-lockfile \|\| install` fallbacks) | Build determinism; CI fails if lockfile missing |
 | `never-bypass-hooks-silently.md` | `scripts/setup-hooks.sh` wires `core.hooksPath` to `~/.claude/git-hooks/`; system-level `block-no-verify.sh` blocks `--no-verify` | Pre-push hook + PreToolUse Bash hook |
