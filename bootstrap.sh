@@ -50,7 +50,14 @@ except: pass
 if [ "$RULESET_EXISTS" = "yes" ]; then
   echo "→ 'Merge Checks' ruleset already exists; skipping creation"
 else
-  echo "→ creating 'Merge Checks' ruleset..."
+  echo "→ creating 'Merge Checks' ruleset (relaxed — no required status checks)..."
+  # Per ~/.claude/rules/greptile-pr-gate.md HARD RULE 2026-05-24 (pm):
+  # Repos ship with a RELAXED Ruleset: no required_status_checks block.
+  # Rationale: hardcoding "CodeRabbit" / "Greptile Review" / "Copilot Pull Request Reviewer"
+  # context names will permanently block merges if the actual bot context names differ
+  # (each bot emits its own slug; names vary per install + version). After the first PR
+  # on the new repo runs the bots, AUDIT the actual status-check names in 'gh pr checks <N>'
+  # and add them manually via Settings → Rules → Rulesets → "Merge Checks" → edit.
   cat > /tmp/ruleset-$$.json <<EOF
 {
   "name": "Merge Checks",
@@ -74,39 +81,24 @@ else
         "require_last_push_approval": false,
         "required_review_thread_resolution": true
       }
-    },
-    {
-      "type": "required_status_checks",
-      "parameters": {
-        "strict_required_status_checks_policy": true,
-        "required_status_checks": [
-          {"context": "CodeRabbit"},
-          {"context": "Greptile Review"}
-        ]
-      }
     }
   ]
 }
 EOF
   gh api -X POST "repos/$REPO/rulesets" --input /tmp/ruleset-$$.json >/dev/null
   rm /tmp/ruleset-$$.json
-  echo "  ✓ ruleset created"
+  echo "  ✓ ruleset created (no required status checks — add after first PR populates context names)"
 fi
 
-# ── Verify CR + Greptile apps ──
-echo "→ checking GitHub apps (CodeRabbit + Greptile)..."
-INSTALLED=$(gh api "repos/$REPO/installation" 2>/dev/null | python3 -c "
-import json, sys
-try:
-  d = json.load(sys.stdin)
-  print(d.get('app_slug',''))
-except: pass
-" || echo "")
-echo "  installations include: $INSTALLED"
-echo "  (Verify CR + Greptile + Copilot are installed at https://github.com/$REPO/settings/installations)"
+# ── GitHub apps verification (manual) ──
+echo "→ Verify bot installations manually:"
+echo "    https://github.com/$REPO/settings/installations"
+echo "  Required: CodeRabbit, Greptile, GitHub Copilot Code Review"
 
 # ── Per-project memory pointer ──
-PROJ_SLUG="-Users-sammy-Developer-${OWNER}-${NAME}"
+# Derive slug from $HOME-based path so it works on any developer's machine.
+REPO_PATH="$HOME/Developer/${OWNER}/${NAME}"
+PROJ_SLUG="$(echo "$REPO_PATH" | sed 's|/|-|g' | sed 's|^-||')"
 MEM_DIR="$HOME/.claude/projects/$PROJ_SLUG/memory"
 if [ ! -d "$MEM_DIR" ]; then
   mkdir -p "$MEM_DIR"
@@ -129,4 +121,5 @@ echo "  2. Replace REPLACE-ME-AT-BOOTSTRAP in package.json if this repo uses Nod
 echo "  3. Open a trivial first PR as DRAFT to populate bot status check names"
 echo "  4. gh pr ready <num> → bot reviews fire on draft→ready transition"
 echo "  5. Verify all 3 bot checks appear in 'gh pr checks <num>'"
-echo "  6. If Greptile check missing: dashboard → enable 'Create GitHub status check' for this repo"
+echo "  6. Add the OBSERVED context names to the Ruleset via Settings → Rules → Rulesets → Merge Checks"
+echo "  7. If Greptile check missing: dashboard → enable 'Create GitHub status check' for this repo"

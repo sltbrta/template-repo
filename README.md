@@ -4,21 +4,30 @@ Sammy's GitHub template for new repos. Pre-loaded with the per-repo files needed
 
 ## What's encoded in this template
 
+Split honestly: rules with mechanical enforcement (CI / hooks / scripts that fail builds) vs rules that are documented references applied through PR review discipline.
+
+### Mechanically enforced (CI + hooks)
+
 | Rule | File(s) | Enforcement layer |
 |---|---|---|
-| `code-modularity-standards.md` (<=500 LOC) | `.github/workflows/file-size-gate.yml`, `scripts/check-file-size.sh`, `.file-size-allow-list` | CI gate + local script |
-| `quality-toolchain-pre-merge.md` (lint + type + sec) | `pyproject.toml`, `biome.json`, `.pre-commit-config.yaml`, `.github/workflows/quality.yml`, `.github/workflows/lint.yml` | Pre-commit + CI |
-| `greptile-pr-gate.md` (3-bot review) | `.coderabbit.yaml`, Ruleset config via `bootstrap.sh` | Branch protection + draft-first discipline |
-| `code-ownership.md` (CODEOWNERS) | `CODEOWNERS`, `.github/workflows/codeowners-check.yml` | Required reviews + validation |
-| `hermetic-builds.md` (pinned toolchain) | `.nvmrc`, `.python-version`, lockfile-frozen CI once projects add lockfiles | Build determinism |
-| `never-bypass-hooks-silently.md` | `scripts/setup-hooks.sh` (wires `core.hooksPath`) | Local + pre-push gate |
-| `monorepo-strategy.md` (workspaces) | `package.json` workspaces, `pyproject.toml` uv baseline | Repo layout |
-| `testing-pyramid.md` (70/20/10) | `docs/CONVENTIONS.md` | Discipline (no CI enforcement) |
-| `function-first-composition.md` | `docs/CONVENTIONS.md` | Discipline (PR review) |
-| `one-function-per-file.md` | `docs/CONVENTIONS.md` | Discipline (PR review) |
-| `feature-flags.md` | `docs/CONVENTIONS.md` | Discipline (project-by-project) |
-| `trunk-based-development.md` | `docs/CONVENTIONS.md` | Discipline (small PRs) |
-| `parallel-phase-cadence.md` | `BOOTSTRAP.md` section 12 | Discipline (multi-PR waves) |
+| `code-modularity-standards.md` (≤500 LOC) | `.github/workflows/file-size-gate.yml`, `scripts/check-file-size.sh`, `.file-size-allow-list` | CI gate fails on offender |
+| `quality-toolchain-pre-merge.md` (lint + type + sec) | `pyproject.toml`, `biome.json`, `.pre-commit-config.yaml`, `.github/workflows/quality.yml`, `.github/workflows/lint.yml` | Pre-commit (Layer 1) + CI gate (Layer 3) |
+| `code-ownership.md` (CODEOWNERS) | `CODEOWNERS`, `.github/workflows/codeowners-check.yml` | Required reviews + PR-branch CODEOWNERS validation |
+| `hermetic-builds.md` (pinned toolchain) | `.nvmrc`, `.python-version`, lockfile-required CI (no `--frozen-lockfile \|\| install` fallbacks) | Build determinism; CI fails if lockfile missing |
+| `never-bypass-hooks-silently.md` | `scripts/setup-hooks.sh` wires `core.hooksPath` to `~/.claude/git-hooks/`; system-level `block-no-verify.sh` blocks `--no-verify` | Pre-push hook + PreToolUse Bash hook |
+| `greptile-pr-gate.md` (3-bot review) | `.coderabbit.yaml`, relaxed Ruleset via `bootstrap.sh` | Draft-first + branch protection (PR + 1 approval + resolution) |
+
+### Discipline references (documented; applied via PR review)
+
+| Rule | Documented in | Enforcement |
+|---|---|---|
+| `monorepo-strategy.md` | `package.json` workspaces + `pyproject.toml` (uv) | Convention — adjust per project |
+| `testing-pyramid.md` (70 / 20 / 10) | `docs/CONVENTIONS.md` | PR review |
+| `function-first-composition.md` | `docs/CONVENTIONS.md` | PR review |
+| `one-function-per-file.md` | `docs/CONVENTIONS.md` | PR review |
+| `feature-flags.md` | `docs/CONVENTIONS.md` | Project-by-project |
+| `trunk-based-development.md` | `docs/CONVENTIONS.md` | Small PRs, daily merges |
+| `parallel-phase-cadence.md` | `BOOTSTRAP.md` § "Draft-first workflow" (referenced) | Multi-PR wave discipline; orchestrator-side |
 
 ## How to use
 

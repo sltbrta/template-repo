@@ -1,4 +1,5 @@
 # Layer 3 of ~/.claude/rules/quality-toolchain-pre-merge.md - CI gate, blocks merge per Ruleset.
+# Hermetic: lockfiles REQUIRED; no fallback to mutable installs (per hermetic-builds.md).
 name: quality
 
 on:
@@ -25,19 +26,27 @@ jobs:
             echo "present=false" >>"$GITHUB_OUTPUT"
           fi
 
-      - name: Set up Python
+      - name: Set up Python (pinned from .python-version)
         if: steps.python-project.outputs.present == 'true'
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version-file: ".python-version"
 
       - name: Set up uv
         if: steps.python-project.outputs.present == 'true'
         uses: astral-sh/setup-uv@v5
 
-      - name: Install Python quality stack
+      - name: Verify uv.lock present (hermetic gate)
         if: steps.python-project.outputs.present == 'true'
-        run: uv sync --all-extras --dev
+        run: |
+          if [ ! -f uv.lock ]; then
+            echo "::error::No uv.lock found. Run 'uv sync' locally and commit uv.lock before opening a PR (per hermetic-builds.md)."
+            exit 1
+          fi
+
+      - name: Install Python quality stack (frozen)
+        if: steps.python-project.outputs.present == 'true'
+        run: uv sync --frozen --all-extras --dev
 
       - name: Ruff lint
         if: steps.python-project.outputs.present == 'true'
@@ -75,7 +84,8 @@ jobs:
 
       - name: Pip-audit dependency vulnerabilities
         if: steps.python-project.outputs.present == 'true'
-        run: uv run pip-audit --strict || true
+        run: uv run pip-audit
+        continue-on-error: true  # TEMPLATE: remove continue-on-error once project's real deps are declared
 
   ts-quality:
     runs-on: ubuntu-latest
@@ -91,13 +101,27 @@ jobs:
             echo "present=false" >>"$GITHUB_OUTPUT"
           fi
 
+      - name: Verify lockfile present (hermetic gate)
+        if: steps.ts-project.outputs.present == 'true'
+        run: |
+          if [ ! -f bun.lockb ] && [ ! -f bun.lock ]; then
+            echo "::error::No bun lockfile found. Run 'bun install' locally and commit bun.lockb (per hermetic-builds.md)."
+            exit 1
+          fi
+
+      - name: Set up Node (pinned from .nvmrc)
+        if: steps.ts-project.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
       - name: Set up Bun
         if: steps.ts-project.outputs.present == 'true'
         uses: oven-sh/setup-bun@v2
 
-      - name: Install JS deps
+      - name: Install JS deps (frozen)
         if: steps.ts-project.outputs.present == 'true'
-        run: bun install --frozen-lockfile || bun install
+        run: bun install --frozen-lockfile
 
       - name: Biome CI (lint + format + organize-imports, no fix)
         if: steps.ts-project.outputs.present == 'true'

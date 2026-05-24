@@ -46,7 +46,9 @@ find . -type f \
   -not -path '*/_generated/*' \
   -print0 |
   while IFS= read -r -d '' file; do
-    count=$(wc -l <"$file" | tr -d '[:space:]')
+    # awk 'END{print NR}' counts lines including a final line without a trailing newline.
+    # 'wc -l' counts newlines, undercounting by 1 when the last line is unterminated.
+    count=$(awk 'END{print NR}' "$file")
     path_without_dot=${file#./}
     if [ "$count" -gt 500 ] &&
       ! grep -Fxq "$file" "$ALLOW_PATTERNS" &&

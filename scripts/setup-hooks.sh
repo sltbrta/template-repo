@@ -32,11 +32,17 @@ if [ -d "$HOOKS_DIR" ]; then
 fi
 
 if [ -n "$LOCAL_OVERRIDES" ]; then
-  echo "WARN: local .git/hooks/ has non-sample files (will override global):"
+  echo "ERROR: local .git/hooks/ has non-sample files. These OVERRIDE global core.hooksPath,"
+  echo "so setting core.hooksPath below would be inert. Per ~/.claude/rules/known-hooks.md"
+  echo "'Worktree-specific hooks' — local repo hooks fully shadow the global path."
+  echo ""
+  echo "Conflicting hook files:"
   while IFS= read -r hook; do
     [ -n "$hook" ] && printf '  %s\n' "$hook"
   done <<<"$LOCAL_OVERRIDES"
-  echo "Decide whether to delete them, then re-run."
+  echo ""
+  echo "Fix: delete the conflicting files (or move them aside), then re-run this script."
+  exit 1
 fi
 
 CURRENT=$(git config --local core.hooksPath 2>/dev/null || echo "")

@@ -106,8 +106,10 @@ The subject says what changed. The body explains why the change exists, what
 tradeoffs matter, and which rules or specs it implements. Use footers for
 issue, PR, or handover references when useful.
 
-Do not add generated-by footers or `Co-Authored-By` trailers unless Sammy
-explicitly asks for them.
+Do NOT add `Co-Authored-By` trailers, `🤖 Generated with Claude Code`
+footers, or any per-commit / per-PR attribution. Attribution goes in the
+repo's top-level README only — one line. See `~/.claude/CLAUDE.md` §
+"Attribution — repo-level only".
 
 ## Trunk-Based Development
 
