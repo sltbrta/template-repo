@@ -1,0 +1,22 @@
+{
+  "name": "REPLACE-ME-AT-BOOTSTRAP",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "bun@1.1.0",
+  "engines": {
+    "node": ">=22",
+    "bun": ">=1.1.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'configure per-project'"
+  },
+  "devDependencies": {}
+}

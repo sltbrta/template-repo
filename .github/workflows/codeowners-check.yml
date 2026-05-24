@@ -1,0 +1,29 @@
+# Per ~/.claude/rules/code-ownership.md - CODEOWNERS without validation is silent failure.
+name: codeowners-check
+
+on:
+  pull_request:
+    paths:
+      - "CODEOWNERS"
+      - ".github/CODEOWNERS"
+      - "docs/CODEOWNERS"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-codeowners:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate CODEOWNERS
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          errors=$(gh api "repos/${{ github.repository }}/codeowners/errors" --jq '.errors')
+          if [ "$errors" != "[]" ]; then
+            echo "::error::CODEOWNERS validation failed"
+            echo "$errors"
+            exit 1
+          fi
+          echo "CODEOWNERS valid."

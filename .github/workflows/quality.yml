@@ -1,0 +1,109 @@
+# Layer 3 of ~/.claude/rules/quality-toolchain-pre-merge.md - CI gate, blocks merge per Ruleset.
+name: quality
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  python-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect Python project
+        id: python-project
+        run: |
+          if [ -f pyproject.toml ]; then
+            echo "present=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "present=false" >>"$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        if: steps.python-project.outputs.present == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Set up uv
+        if: steps.python-project.outputs.present == 'true'
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Python quality stack
+        if: steps.python-project.outputs.present == 'true'
+        run: uv sync --all-extras --dev
+
+      - name: Ruff lint
+        if: steps.python-project.outputs.present == 'true'
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        if: steps.python-project.outputs.present == 'true'
+        run: uv run ruff format --check .
+
+      - name: Mypy type check
+        if: steps.python-project.outputs.present == 'true'
+        run: |
+          if find . -type f -name '*.py' \
+            -not -path './.venv/*' \
+            -not -path './venv/*' \
+            -not -path './.git/*' \
+            | grep -q .; then
+            uv run mypy . --ignore-missing-imports
+          else
+            echo "No Python files; skipping mypy."
+          fi
+
+      - name: Bandit security scan
+        if: steps.python-project.outputs.present == 'true'
+        run: |
+          if find . -type f -name '*.py' \
+            -not -path './.venv/*' \
+            -not -path './venv/*' \
+            -not -path './.git/*' \
+            | grep -q .; then
+            uv run bandit -r . -c pyproject.toml -q
+          else
+            echo "No Python files; skipping bandit."
+          fi
+
+      - name: Pip-audit dependency vulnerabilities
+        if: steps.python-project.outputs.present == 'true'
+        run: uv run pip-audit --strict || true
+
+  ts-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect TS/JS project
+        id: ts-project
+        run: |
+          if [ -f package.json ]; then
+            echo "present=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "present=false" >>"$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Bun
+        if: steps.ts-project.outputs.present == 'true'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Biome check
+        if: steps.ts-project.outputs.present == 'true'
+        run: bunx --bun @biomejs/biome check .
+
+      - name: TypeScript type check
+        if: steps.ts-project.outputs.present == 'true'
+        run: |
+          if [ -f tsconfig.json ]; then
+            bunx --bun typescript tsc --noEmit
+          else
+            echo "No tsconfig.json; extend tsconfig.base.json before enabling TS typecheck."
+          fi

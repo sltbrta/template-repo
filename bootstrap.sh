@@ -10,6 +10,7 @@
 #   - gh CLI authed with admin scope on the target repo
 #   - Repo already created from template
 #   - CR + Greptile + Copilot apps installed on the repo OR org (manual one-time step)
+#   - package.json still carries REPLACE-ME-AT-BOOTSTRAP until the project names itself
 
 set -euo pipefail
 
@@ -124,7 +125,8 @@ echo "=== Bootstrap complete ==="
 echo ""
 echo "Next steps (manual):"
 echo "  1. Install CR + Greptile + Copilot apps at https://github.com/$REPO/settings/installations (if not already)"
-echo "  2. Open a trivial first PR as DRAFT to populate bot status check names"
-echo "  3. gh pr ready <num> → bot reviews fire on draft→ready transition"
-echo "  4. Verify all 3 bot checks appear in 'gh pr checks <num>'"
-echo "  5. If Greptile check missing: dashboard → enable 'Create GitHub status check' for this repo"
+echo "  2. Replace REPLACE-ME-AT-BOOTSTRAP in package.json if this repo uses Node tooling"
+echo "  3. Open a trivial first PR as DRAFT to populate bot status check names"
+echo "  4. gh pr ready <num> → bot reviews fire on draft→ready transition"
+echo "  5. Verify all 3 bot checks appear in 'gh pr checks <num>'"
+echo "  6. If Greptile check missing: dashboard → enable 'Create GitHub status check' for this repo"

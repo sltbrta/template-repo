@@ -14,6 +14,7 @@ One-time checklist. ~5 minutes. Per `~/.claude/rules/greptile-pr-gate.md`.
 - [ ] Edit `docs/ROADMAP.md` — initialize Track A + first deliverables.
 - [ ] Edit `LICENSE` — if not MIT, replace with appropriate license.
 - [ ] Edit `.coderabbit.yaml` — adjust `language` or `path_filters` per project if needed.
+- [ ] Edit `package.json` — replace `REPLACE-ME-AT-BOOTSTRAP` and set the package manager pin if not using Bun.
 
 ## 3. Install GitHub apps (one-time per repo)
 
@@ -55,11 +56,17 @@ Per `~/.claude/rules/greptile-pr-gate.md` § "Set GitHub Ruleset for `main`":
 
 ## 6. CI environment
 
-The `file-size-gate.yml` workflow runs on every PR. No additional setup needed.
+The template ships three repo-local CI checks:
 
-If the project uses Python:
-- [ ] Initialize `pyproject.toml` with the ruff/radon config snippet from `~/.claude/rules/code-modularity-standards.md`.
-- [ ] Add `uv sync` + `uv run pytest` workflows as needed.
+- `file-size-gate.yml` calls `scripts/check-file-size.sh`.
+- `quality.yml` runs Python and TS/JS quality jobs when `pyproject.toml` or `package.json` exists.
+- `codeowners-check.yml` validates CODEOWNERS when ownership files change.
+
+Per-project setup:
+
+- [ ] Add lockfiles (`uv.lock`, `bun.lockb`, `pnpm-lock.yaml`, etc.) once dependencies are real.
+- [ ] Add project-specific tests and coverage gates once source exists.
+- [ ] Confirm actual CI status-check names after the first PR, then add them to the Ruleset.
 
 ## 7. First commit
 
@@ -75,6 +82,35 @@ Once bootstrap complete, add a per-project memory entry:
 ```
 
 Note: date enabled, exact status-check names confirmed for this repo, any per-repo .coderabbit.yaml overrides.
+
+## 9. Modularity gates
+
+Per `~/.claude/rules/code-modularity-standards.md`, the file cap is wired in two places:
+
+- `.github/workflows/file-size-gate.yml` runs on PRs and pushes to `main`.
+- `scripts/check-file-size.sh` is the single source of truth and can be run locally.
+- `.file-size-allow-list` records justified exceptions only.
+
+Run `bash scripts/check-file-size.sh` before the first PR and add no exceptions unless the rule allows them.
+
+## 10. Quality toolchain
+
+Per `~/.claude/rules/quality-toolchain-pre-merge.md`, the template includes Layer 1 and Layer 3 scaffolding:
+
+- `.pre-commit-config.yaml` for local ruff/Biome hooks.
+- `pyproject.toml` for ruff, mypy, bandit, and pytest defaults.
+- `biome.json` and `tsconfig.base.json` for TS/JS lint, format, and strict TS.
+- `.github/workflows/quality.yml` for CI.
+
+After clone, run `./scripts/setup-hooks.sh` and `pre-commit install` if the project uses pre-commit.
+
+## 11. 3-bot PR review
+
+Per `~/.claude/rules/greptile-pr-gate.md`, use CodeRabbit, Greptile, and Copilot as the ready-state review set. Open work as draft first, perform internal review, then mark ready. When ready, poll all three reviewer surfaces: inline comments, issue comments, and formal reviews. Apply or dismiss every finding with reasoning before merge.
+
+## 12. Draft-first workflow
+
+Every non-trivial PR opens as draft. Run a subagent or CLI review on the draft diff, fix findings, then `gh pr ready <num>` to trigger the bot pass. For parallel phases, follow `~/.claude/rules/parallel-phase-cadence.md`: move every PR in the wave through draft, internal review, ready, bot findings, and merge together. Do not advance one sibling ahead of the wave.
 
 ---
 
